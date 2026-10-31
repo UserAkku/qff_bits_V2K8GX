@@ -1,0 +1,61 @@
+[project]
+name = "qkd-messenger"
+version = "0.1.0"
+description = "Simulated BB84/E91 quantum key distribution (Qiskit) feeding an ETSI-014 key manager and an end-to-end encrypted messenger."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "qiskit>=2.6,<3",
+  "qiskit-aer>=0.18,<0.19",
+  "numpy>=2.1",
+  "scipy>=1.14",
+  "fastapi>=0.160",
+  "uvicorn[standard]>=0.50",
+  "pydantic>=2.12",
+  "cryptography>=46",
+]
+
+[project.optional-dependencies]
+ibm = ["qiskit-ibm-runtime>=0.51"]
+experiments = ["matplotlib>=3.10"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4",
+  "pytest-asyncio>=1.2",
+  "httpx>=0.28",
+  "ruff>=0.14",
+  "mypy>=1.18",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qkd", "src/server"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "slow: statistically heavy tests (deselect with -m 'not slow')",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["qkd", "server"]
+mypy_path = "src"
+ignore_missing_imports = true
+warn_unused_ignores = true
