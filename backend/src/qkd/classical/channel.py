@@ -87,7 +87,9 @@ class ClassicalChannel:
         await self._inbox[other(sender)].put(on_wire)
         return message
 
-    async def receive(self, receiver: Role, kind: str) -> Message:
+    async def receive(self, receiver: Role, kind: str | tuple[str, ...]) -> Message:
+        kinds = (kind,) if isinstance(kind, str) else kind
+        kind = "/".join(kinds)
         try:
             message = await asyncio.wait_for(self._inbox[receiver].get(), self.timeout_s)
         except TimeoutError as exc:
@@ -97,7 +99,7 @@ class ClassicalChannel:
             raise ProtocolAbort(
                 payload.get("reason", "aborted by peer"), payload.get("stage", kind), payload
             )
-        if message.kind != kind:
+        if message.kind not in kinds:
             raise ProtocolAbort(f"expected '{kind}' but received '{message.kind}'", kind)
         return message
 

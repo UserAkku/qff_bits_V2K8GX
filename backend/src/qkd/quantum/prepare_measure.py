@@ -28,6 +28,7 @@ from qkd.quantum.channel import ChannelModel
 from qkd.quantum.executor import BatchedExecutor, BatchResult
 
 N_BASES = 3
+LINK_STREAM = 2  # independent of Alice's (0) and Bob's (1) streams for the same seed
 
 
 def encode(
@@ -75,7 +76,7 @@ class PrepareMeasureLink:
         self.channel = channel
         self.attack = attack
         self.executor = BatchedExecutor(seed=seed, simulator=channel.simulator())
-        self.rng = np.random.default_rng(None if seed is None else seed + 1)
+        self.rng = np.random.default_rng(None if seed is None else [seed, LINK_STREAM])
 
     def circuit(self, code: int) -> QuantumCircuit:
         """The full single-signal experiment for one configuration code."""

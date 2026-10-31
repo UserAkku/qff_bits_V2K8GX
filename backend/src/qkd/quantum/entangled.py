@@ -93,7 +93,7 @@ class EntangledLink:
         self.channel = channel
         self.attack = attack
         self.executor = BatchedExecutor(seed=seed, simulator=channel.simulator())
-        self.rng = np.random.default_rng(None if seed is None else seed + 1)
+        self.rng = np.random.default_rng(None if seed is None else [seed, 2])
 
     def circuit(self, code: int) -> QuantumCircuit:
         alice_setting, bob_setting, action = decode(code)
