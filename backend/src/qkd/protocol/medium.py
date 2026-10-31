@@ -10,6 +10,7 @@ meet over the public classical channel.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -18,8 +19,13 @@ from qkd.quantum.prepare_measure import BobObservation, PrepareMeasureLink, Tran
 
 
 class QuantumMedium:
-    def __init__(self, link: PrepareMeasureLink):
+    def __init__(
+        self,
+        link: PrepareMeasureLink,
+        on_done: Callable[[Transmission], None] | None = None,
+    ):
         self.link = link
+        self._on_done = on_done
         self.transmission: Transmission | None = None  # the simulator's omniscient record
         self._alice: tuple[NDArray[np.int8], NDArray[np.int8]] | None = None
         self._bob: NDArray[np.int8] | None = None
@@ -49,6 +55,8 @@ class QuantumMedium:
             self.transmission = await asyncio.to_thread(
                 self.link.transmit, bits, a_bases, self._bob
             )
+            if self._on_done is not None:
+                self._on_done(self.transmission)
         except BaseException as exc:  # surfaced to Bob; Alice sees it when she next waits
             self._failure = exc
         finally:
@@ -63,11 +71,19 @@ class QuantumMedium:
 class MediumHub:
     """One quantum medium per chunk of signals; both parties fetch the same instance by index."""
 
-    def __init__(self, link: PrepareMeasureLink):
+    def __init__(
+        self,
+        link: PrepareMeasureLink,
+        on_transmission: Callable[[int, Transmission], None] | None = None,
+    ):
         self.link = link
         self.media: dict[int, QuantumMedium] = {}
+        self._on_transmission = on_transmission
 
     def medium(self, chunk: int) -> QuantumMedium:
         if chunk not in self.media:
-            self.media[chunk] = QuantumMedium(self.link)
+            callback = self._on_transmission
+            self.media[chunk] = QuantumMedium(
+                self.link, (lambda tx, c=chunk: callback(c, tx)) if callback else None
+            )
         return self.media[chunk]

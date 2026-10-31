@@ -328,7 +328,25 @@ async def run_bb84(
 
     started = time.perf_counter()
     channel = ClassicalChannel(taps=list(taps), tamper=tamper, timeout_s=timeout_s)
-    hub = MediumHub(link)
+
+    def on_transmission(chunk: int, tx) -> None:
+        """Simulator-only record of Eve's actions on the first signals (shown, labelled, in the lab)."""
+        if chunk == 0 and tx.eve is not None:
+            m = params.preview_signals
+            record(
+                Event(
+                    "quantum",
+                    "eve_acted",
+                    {
+                        "actions": tx.eve.action[:m].tolist(),
+                        "outcomes": tx.eve.outcome[:m].tolist(),
+                        "attack": link.attack.describe() if link.attack else None,
+                        "simulator_only": True,
+                    },
+                )
+            )
+
+    hub = MediumHub(link, on_transmission)
     alice_rand = Randomness(seed)
     bob_rand = Randomness(seed, stream=1)
 
